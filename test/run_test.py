@@ -1673,7 +1673,9 @@ def main():
             s += "".join(f"    {test}\n" for test in parallel)
             return s.strip()
 
-    test_batch = TestBatch("all_tests", test_prioritizations.get_all_tests(), False)
+    percent_to_run = 50 if options.enable_td else 100
+
+    test_batch = TestBatch("all_tests", test_prioritizations.get_top_per_tests(percent_to_run), False)
 
     print_to_stderr(test_batch)
 

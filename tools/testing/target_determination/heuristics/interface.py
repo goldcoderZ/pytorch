@@ -112,6 +112,10 @@ class TestPrioritizations:
         """Returns all tests in the TestPrioritizations"""
         return [x[1] for x in self._traverse_scores()]
 
+    def get_top_per_tests(self, n: int) -> List[TestRun]:
+        """Returns top n percent of tests in the TestPrioritizations"""
+        return [x[1] for x in list(self._traverse_scores())[:n * len(self._test_scores) // 100]]
+
     def get_info_str(self) -> str:
         info = ""
 

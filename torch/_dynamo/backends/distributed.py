@@ -256,11 +256,16 @@ class SubmodCompiler(torch.fx.interpreter.Interpreter):
                 traceback.FrameSummary(__file__, 0, DDPOptimizer),
             ],
         )
-        wrapper = WrapperModule(
-            self.compiler(input_mod, args),
-            unwrap_singleton_tuple,
-        )
-        return wrapper
+        context = torch._guards.TracingContext.try_get()
+        assert context is not None
+
+        with torch._guards.TracingContext.report_output_strides() as output_strides:
+            wrapper = WrapperModule(
+                self.compiler(input_mod, args),
+                unwrap_singleton_tuple,
+            )
+
+        return wrapper, output_strides
 
     # Note:
     #
@@ -311,7 +316,9 @@ class SubmodCompiler(torch.fx.interpreter.Interpreter):
             # be FakeTensors already since Dynamo would have made them FakeTensors in the
             # non-DDP flow.  However, the parameters are _not_ expected to be FakeTensors,
             # since this wrapping happens during compilation
-            compiled_submod_real = self.compile_submod(real_mod, new_args, kwargs)
+            compiled_submod_real, output_strides = self.compile_submod(
+                real_mod, new_args, kwargs
+            )
 
             # We update the original (outer) graph with a call into the compiled module
             # instead of the uncompiled one.
@@ -322,7 +329,18 @@ class SubmodCompiler(torch.fx.interpreter.Interpreter):
             # Finally, we have to produce inputs for use compiling the next submodule,
             # and these need to be FakeTensors, so we execute the module under fake_mode
             with self.fake_mode:
-                return curr_submod(*new_args, **kwargs)
+                # TODO - make sure the first outputs of inductor match with user visible outputs
+                # (I think thats the case)
+                out = curr_submod(*new_args, **kwargs)
+                if not isinstance(out, (list, tuple)):
+                    out_new = [out]
+                out_new = [
+                    o.as_strided(o.shape, output_strides[i])
+                    for i, o in enumerate(out_new)
+                ]
+                if not isinstance(out, (list, tuple)):
+                    out_new = out_new[0]
+                return out_new
         else:
             # placeholder or output nodes don't need to get compiled, just executed
             return getattr(self, n.op)(n.target, new_args, kwargs)
@@ -530,12 +548,6 @@ class DDPOptimizer:
             # to the second graph to be wrong.
             # To really fix this, we would need to faithfully ask inductor
             # what the outputs to each graph it expects are.
-            assert torch._inductor.config.keep_output_stride, """\
-Detected that you are running DDP with torch.compile, along with these two flags:
-- torch._dynamo.config.optimize_ddp = True
-- torch._inductor.config.keep_output_stride = False
-This combination of flags is incompatible. Please set keep_output_stride to False,
-or file a github issue."""
             fake_mode = detect_fake_mode(example_inputs)
             if fake_mode is None:
                 fake_mode = torch._subclasses.fake_tensor.FakeTensorMode()

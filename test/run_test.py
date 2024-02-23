@@ -32,6 +32,7 @@ from torch.testing._internal.common_utils import (
     shell,
     TEST_WITH_ASAN,
     TEST_WITH_ROCM,
+    TEST_WITH_CROSSREF,
     TEST_WITH_SLOW_GRADCHECK,
 )
 
@@ -1153,7 +1154,7 @@ def parse_args():
         action="store_true",
         help="Enables removing tests based on TD",
         default=IS_CI
-        and TEST_WITH_ROCM
+        and (TEST_WITH_ROCM or TEST_WITH_CROSSREF)
         and os.getenv("BRANCH", "") != "main"
         and not strtobool(os.environ.get("NO_TD", "False")),
     )

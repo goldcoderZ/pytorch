@@ -1676,10 +1676,16 @@ def main():
             return s.strip()
 
     percent_to_run = 50 if options.enable_td else 100
+    print_to_stderr(
+        f"Running {percent_to_run}% of tests based on TD" if options.enable_td else "Running all tests"
+    )
+    include, exclude = test_prioritizations.get_top_per_tests(percent_to_run)
 
-    test_batch = TestBatch("all_tests", test_prioritizations.get_top_per_tests(percent_to_run), False)
+    test_batch = TestBatch("tests to run", include, False)
+    test_batch_exclude = TestBatch("excluded", exclude, True)
 
     print_to_stderr(test_batch)
+    print_to_stderr(test_batch_exclude)
 
     if options.dry_run:
         return

@@ -2073,6 +2073,13 @@ class GraphModule(torch.nn.Module):
             t3 = t1 + t2
 
         func()
+    def test_to(self):
+        @torch.compile(backend="eager")
+        def fn():
+            t = torch.ones(2)
+            y = t.to("meta")
+
+        fn()
 
     def test_elipsis(self):
         @torch.compile(backend="eager", fullgraph=True)

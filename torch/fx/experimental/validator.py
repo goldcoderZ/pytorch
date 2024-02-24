@@ -679,7 +679,7 @@ def bisect(shape_env):
         assert tracked_fakes is not None
         try:
             # This produce_guards call is a best-effort replication, since we
-            # don't populate EqualityConstraint list. Reason: we would also have
+            # don't populate EqualityConstraints. Reason: we would also have
             # to save OutputGraph.tracked_fakes_id_to_source.
             shape_env.produce_guards(
                 [new_with_shape_env(shape_env, a.fake) for a in tracked_fakes],

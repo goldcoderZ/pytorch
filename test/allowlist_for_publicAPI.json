@@ -1987,7 +1987,7 @@
     "DimConstraints",
     "DimDynamic",
     "DynamicDimConstraintPrinter",
-    "EqualityConstraint",
+    "EqualityConstraints",
     "GuardOnDataDependentSymNode",
     "LoggingShapeGuardPrinter",
     "RelaxedUnspecConstraint",

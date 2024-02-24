@@ -19,7 +19,7 @@ torch.fx.experimental.symbolic_shapes
     DimDynamic
     StrictMinMaxConstraint
     RelaxedUnspecConstraint
-    EqualityConstraint
+    EqualityConstraints
     SymbolicContext
     StatelessSymbolicContext
     StatefulSymbolicContext
